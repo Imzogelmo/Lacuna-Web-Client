@@ -709,19 +709,29 @@ if (typeof YAHOO.lacuna.Menu == "undefined" || !YAHOO.lacuna.Menu) {
         
         resourceTTText : function(name, icon, iconClass, hour, store, cap) {
             var wantCap = typeof cap !== 'undefined';
-            return [
+            return [ // This is horrid, needs cleanup
                 '<div><strong>',name,'</strong></div>',
                 '<div><img alt="" class="',iconClass,'" src="',Lib.AssetUrl,'ui/s/',icon,'.png" /> ',Lib.formatNumber(hour),'/hr</div>',
                 '<div><img alt="" class="smallStorage" src="',Lib.AssetUrl,'ui/s/storage.png" />',Lib.formatNumber(Math.round(store)), (wantCap ? '/'+Lib.formatNumber(cap) : ''),'</div>',
-                (wantCap ? '<div><img alt="" class="smallTime" src="'+Lib.AssetUrl+'ui/s/time.png" />' + (
+                '<div><img alt="" class="smallTime" src="'+Lib.AssetUrl+'ui/s/time.png" />',
+                (wantcap ? ( // cap applies to all but happiness
                     hour < 0 && store > 0 ?
                         'Empty In '+Lib.formatTime(-3600 * store / hour) :
                     hour >= 0 && cap == store ?
                         'Full' :
                     hour > 0 ?
                         'Full In '+Lib.formatTime(3600 * (cap - store) / hour) :
-                    'Will Never Fill'
-                ) + '</div>' : '')
+                    'Will Never Fill' )
+                : // Else there is no cap; in other words, looking at happiness
+                (
+                    hour < 0 && store > 0 ?
+                        'Negative In'+Lib.formatTime(-3600 * store / hour) :
+                    hour >= 0 && store >= 0 ? 
+                        'Onward And Upward' :
+                    hour < 0 && store < 0 ?
+                        'Deep Trouble' :
+                    'Positive In'+Lib.formatTime(3600 * store / hour)
+                ),'</div>' )
             ];
         },
         getTextFor : function(id) {
