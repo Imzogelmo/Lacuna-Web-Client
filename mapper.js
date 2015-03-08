@@ -300,6 +300,8 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
                 Dom.setStyle(image, "left", "0");
                 this.imageHolder = image;
             }
+            this._buildFissureHolder();
+            this._buildLogoHolder();
             if(this.data.orbit) {
                 if(this.map.hidePlanets) {
                     switch(this.data.type) {
@@ -323,10 +325,21 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
                 else {
                     var pSize = ((100 - Math.abs(this.data.size - 100)) / (100 / this.tileSizeInPx)) + 15;
                     this.imageHolder.innerHTML = ['<img src="',this.image,'" class="planet planet',this.data.orbit,'" style="width:',pSize,'px;height:',pSize,'px;margin-top:',Math.floor(((this.tileSizeInPx - pSize) / 2)),'px;" />'].join('');
+
+
+                    if (this.data.body_has_fissure) {
+                        this.fissureHolder.innerHTML = ['<img src="',Lib.AssetUrl,'star_map/fissure_icon.png" class="planet" style="width:',pSize,'px;height:',pSize,'px;margin-top:',Math.floor(((this.tileSizeInPx - pSize) / 2)),'px;" />'].join('');
+                    }
                 }
                 
             }
             else {
+                if (this.data.station) {
+
+                    var station = this.data.station;
+                    var pSize = this.tileSizeInPx;
+                    this.logoHolder.innerHTML= ['<img src="',Lib.AssetUrl,'alliances/',station.alliance.image,'.png" class="star" style="width:',pSize,'px;height:',pSize,'px;" />'].join('');
+                }
                 this.imageHolder.innerHTML = ['<img src="',this.image,'" class="star" style="width:',this.tileSizeInPx,'px;height:',this.tileSizeInPx,'px;" />'].join('');
             }
         },
@@ -350,6 +363,30 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
             else if(this.map.hidePlanets && this.data.orbit){
                 this._buildAlignmentHolder();
                 Dom.addClass(this.alignHolder, 'probed');
+            }
+        },
+        _buildLogoHolder : function() {
+            if(!this.logoHolder) {
+                var logo = this.domElement.appendChild(document.createElement('div'));
+                Dom.setStyle(logo, "width", this.tileSizeInPx + 'px');
+                Dom.setStyle(logo, "height", this.tileSizeInPx + 'px');
+                Dom.setStyle(logo, "position", "absolute");
+                Dom.setStyle(logo, "top", "0");
+                Dom.setStyle(logo, "left", "0");
+                Dom.setStyle(logo, "z-index", '3');
+                this.logoHolder = logo;
+            }
+        },
+        _buildFissureHolder : function() {
+            if(!this.fissureHolder) {
+                var fissure = this.domElement.appendChild(document.createElement('div'));
+                Dom.setStyle(fissure, "width", this.tileSizeInPx + 'px');
+                Dom.setStyle(fissure, "height", this.tileSizeInPx + 'px');
+                Dom.setStyle(fissure, "position", "absolute");
+                Dom.setStyle(fissure, "top", "0");
+                Dom.setStyle(fissure, "left", "0");
+                Dom.setStyle(fissure, "z-index", '3');
+                this.fissureHolder = fissure;
             }
         },
         _buildAlignmentHolder : function() {
@@ -1260,7 +1297,7 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
     };
     Lang.augmentProto(Map, Util.EventProvider);
     
-    var MAX_STAR_AREA = 900;
+    var MAX_STAR_AREA = 3001;
     Mapper.StarMap = function( divId, options ) {
         Mapper.StarMap.superclass.constructor.call(this, divId, options);
         Dom.setStyle(this.mapDiv, 'background-image', 'url("'+Lib.AssetUrl+'star_system/field.png")');
@@ -1339,16 +1376,15 @@ if (typeof YAHOO.lacuna.Mapper == "undefined" || !YAHOO.lacuna.Mapper) {
                 }
             }
             else {
-                var data = {
-                    session_id : Game.GetSession(""),
-                    x1 : x1, 
-                    x2 : x2, 
-                    y1 : y1, 
-                    y2 : y2
-                };
                 //YAHOO.log(data, "debug", "StarMap.getTileData.requestData");
                 Lacuna.Pulser.Show();
-                Game.Services.Map.get_stars(data,{
+                Game.Services.Map.get_star_map({ args: {
+                    session_id : Game.GetSession(""),
+                    left : x1,
+                    right : x2,
+                    top : y1,
+                    bottom : y2
+                }},{
                     success : function(o){
                         //YAHOO.log(o, "debug", "StarMap.getTileData.get_stars.success");
                         Lacuna.Pulser.Hide();

@@ -36,7 +36,7 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
             panel.innerHTML = ['<div class="hd">Details</div>',
                 '<div class="bd">',
                 '    <div class="yui-g">',
-                '        <div class="yui-u first" id="starDetailsImg" class="background:black:width:100px;">',
+                '        <div class="yui-u first" id="starDetailsImg" class="background:black;">',
                 '        </div>',
                 '        <div class="yui-u" id="starDetailsInfo">',
                 '        </div>',
@@ -1250,7 +1250,8 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                 '    <li><label>X: </label>',data.x,'</li>',
                 '    <li><label>Y: </label>',data.y,'</li>',
                 '    <li><label>Zone: </label>',data.zone,'</li>',
-                data.station ? ('    <li><label>Station: </label>'+data.station.name+' ('+data.station.x+' : '+data.station.y+')</li>') : '',
+                '    <li><label>Star ID: </label>',data.id,'</li>',
+                data.station ? ('    <li><label>Station: </label>'+data.station.name+' ('+data.station.x+' : '+data.station.y+')</li><li><label>Station ID: </label>'+data.station.id+'</li>') : '',
                 '</ul>'
             ].join('');
             
@@ -1264,11 +1265,20 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
             if(!keepOpen) {
                 Game.OverlayManager.hideAllBut(this.planetDetails.id);
             }
+			var panel = this.planetDetails;
+
+            Game.Services.Body.get_body_status({ args: {
+                    session_id: Game.GetSession(""),
+                    body_id: tile.data.id
+                }},{
+                    success : function(o){
+                        YAHOO.log(o, "info", "ShowPlanet.get_status.success");
+
+			var body = o.result.body,
+				tab, tabs,
+				empire = body.empire || {alignment:"none", name:""};
+
             
-            var body = tile.data,
-                tab, tabs,
-                panel = this.planetDetails,
-                empire = body.empire || {alignment:"none", name:""};
                 
             panel.resetDisplay(this);
             
@@ -1281,9 +1291,10 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                 empire.id ? ('<li><label>Isolationist: </label>'+(empire.is_isolationist=="1" ? 'Yes' : 'No')+'</li>') : '',
                 '    <li><label>Water: </label>',body.water,'</li>',
                 '    <li><label>Planet Size:</label>',body.size,'</li>',
-                '    <li><label>Location in Universe:</label>',body.x,'x : ',body.y,'y</li>',
+                '    <li><label>Location:</label>',body.x,'x : ',body.y,'y</li>',
                 '    <li><label>Zone:</label>',body.zone,'</li>',
-                '    <li><label>Star:</label>',body.star_name,'</li>',
+                '    <li><label>Body ID:</label>',body.id,'</li>',
+                '    <li><label>Star:</label>',body.star_name,' (<b>ID:</b> ', body.star_id, ')</li>',
                 '    <li><label>Orbit:</label>',body.orbit,'</li>',
                 (empire.alignment == "self" || (empire.alignment == "ally" && body.type == "space station")) ? '    <li><button type="button">View</button></li>' : '',
                 '</ul>'
@@ -1383,9 +1394,21 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                     }
                 }
             }
-            if(panel.excavTab) {
-                panel.tabView.addTab(panel.excavTab);
-                delete panel.excavTab;
+            if (body.type !== "gas giant" && !body.empire) {
+                if(panel.excavTab) {
+                    panel.tabView.addTab(panel.excavTab);
+                    delete panel.excavTab;
+                }
+            }
+            else {
+                tabs = panel.tabView.get("tabs");
+                for(var mnt = tabs.length; mnt >= 0; mnt--) {
+                    tab = panel.tabView.getTab(mnt);
+                    if(tab && tab.get("label") == this._excavLabel) {
+                        panel.excavTab = tab;
+                        panel.tabView.removeTab(tab);
+                    }
+                }
             }
             
             //this.GetShips(panel,{body_id:body.id});
@@ -1394,6 +1417,20 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
             this.selectedTile = tile;
             panel.tabView.selectTab(0);
             panel.show();
+
+
+
+
+                    },
+                    failure : function(o){
+                        YAHOO.log(o, "info","ShowPlanet.get_status.fail");
+
+                        return true;
+                    },
+                    scope:this
+                }
+            );
+
         },
         
         Rename : function() {
@@ -1490,6 +1527,9 @@ if (typeof YAHOO.lacuna.MapStar == "undefined" || !YAHOO.lacuna.MapStar) {
                 var ship = ships[i];
                 if (ship.max_occupants > maxSpies) {
                     maxSpies = ship.max_occupants;
+                }
+                if (maxSpies > 100) {
+                    maxSpies = 100;
                 }
             }
             if (maxSpies == 0) {

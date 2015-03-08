@@ -44,10 +44,11 @@ if (typeof YAHOO.lacuna.Essentia == "undefined" || !YAHOO.lacuna.Essentia) {
             this.timeHappiness = Dom.get("essentialDetailsTimeHappiness");
             this.timeStorage = Dom.get("essentialDetailsTimeStorage");
             this.timeBuilding = Dom.get("essentialDetailsTimeBuilding");
+            this.timeSpyTraining = Dom.get("essentialDetailsTimeSpyTraining");
             this.elCode = Dom.get("essentiaRedeemCode");
             this.elEssentiaAmount = Dom.get("essentiaAmount");
             this.tabView = new YAHOO.widget.TabView('essentiaTabs');
-            Event.on(["essentiaBoostFood","essentiaBoostOre","essentiaBoostWater","essentiaBoostEnergy","essentiaBoostHappiness","essentiaBoostStorage","essentiaBoostBuilding"], "click", this.boost, this, true);
+            Event.on(["essentiaBoostFood","essentiaBoostOre","essentiaBoostWater","essentiaBoostEnergy","essentiaBoostHappiness","essentiaBoostStorage","essentiaBoostBuilding","essentiaBoostSpyTraining"], "click", this.boost, this, true);
             Event.on('essentiaRedeemButton', 'click', this.redeemClick, this, true);
             Event.on('essentiaInvite', 'click', Lacuna.Invite.show, this, true);
             Event.on("essentiaPurchaseButton", "click", function(e){
@@ -136,6 +137,13 @@ if (typeof YAHOO.lacuna.Essentia == "undefined" || !YAHOO.lacuna.Essentia) {
             '                           <td class="essentiaDetailsCost">5 <img src="',Lib.AssetUrl,'ui/s/essentia.png" class="smallEssentia" /></td>',
             '                           <td class="essentiaDetailsBoost"><button id="essentiaBoostBuilding" type="button">Boost</button></td>',
             '                           <td class="essentiaDetailsTime" id="essentialDetailsTimeBuilding"></td>',
+            '                       </tr>',
+            '                       <tr>',
+            '                           <td class="essentiaDetailsImg"><img class="smallSpy" title="Spy" src="',Lib.AssetUrl,'ui/s/spy.png" /></td>',
+            '                           <td class="essentiaDetailsText">+50% spy training speed</td>',
+            '                           <td class="essentiaDetailsCost">5 <img src="',Lib.AssetUrl,'ui/s/essentia.png" class="smallEssentia" /></td>',
+            '                           <td class="essentiaDetailsBoost"><button id="essentiaBoostSpyTraining" type="button">Boost</button></td>',
+            '                           <td class="essentiaDetailsTime" id="essentialDetailsTimeSpyTraining"></td>',
             '                       </tr>',
             '                    </table>',
             '                </div>',
@@ -249,6 +257,9 @@ if (typeof YAHOO.lacuna.Essentia == "undefined" || !YAHOO.lacuna.Essentia) {
                 case "essentiaBoostBuilding":
                     func = Game.Services.Empire.boost_building;
                     break;
+                case "essentiaBoostSpyTraining":
+                    func = Game.Services.Empire.boost_spy_training;
+                    break;
             }
             if(func) {
                 func({session_id:Game.GetSession("")},{
@@ -283,6 +294,9 @@ if (typeof YAHOO.lacuna.Essentia == "undefined" || !YAHOO.lacuna.Essentia) {
             else if(results.building_boost) {
                 this.updateTime(this.timeBuilding, results.building_boost);
             }
+            else if(results.spy_training_boost) {
+                this.updateTime(this.timeSpyTraining, results.spy_training_boost);
+            }
         },
         populate : function(results) {
             var boosts = results.boosts;
@@ -294,6 +308,7 @@ if (typeof YAHOO.lacuna.Essentia == "undefined" || !YAHOO.lacuna.Essentia) {
             this.updateTime(this.timeHappiness, boosts.happiness);
             this.updateTime(this.timeStorage, boosts.storage);
             this.updateTime(this.timeBuilding, boosts.building);
+            this.updateTime(this.timeSpyTraining, boosts.spy_training);
         },
         updateTime : function(el, sDate) {
             var timers = this.timers;

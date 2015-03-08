@@ -19,7 +19,7 @@ if (typeof YAHOO.lacuna.buildings.MiningMinistry == "undefined" || !YAHOO.lacuna
     
     Lang.extend(MiningMinistry, Lacuna.buildings.Building, {
         getChildTabs : function() {
-            return [this._getPlatformTab(), this._getShipsTab()];
+            return [this._getPlatformTab(), this._getShipsTab(), this._getAbandonAllPlatformsTab() ];
         },
         _getPlatformTab : function() {
             this.platformTab = new YAHOO.widget.Tab({ label: "Platforms", content: [
@@ -49,6 +49,17 @@ if (typeof YAHOO.lacuna.buildings.MiningMinistry == "undefined" || !YAHOO.lacuna
             this.shipsTab.subscribe("activeChange", this.viewShips, this, true);
                     
             return this.shipsTab;
+        },
+        _getAbandonAllPlatformsTab : function() {
+            this.probesTab = new YAHOO.widget.Tab({ label: "Abandon All Platforms", content: [
+                    '<div>',
+                    '    <button type="button" id="miningMinistryBigRedButton">Abandon All Platforms!</button>',
+                    '</div>'
+                ].join('')});
+            
+            Event.on("miningMinistryBigRedButton", "click", this.AbandonAllPlatforms, this, true);
+            
+            return this.probesTab;
         },
         
         viewPlatforms : function(e) {
@@ -369,10 +380,30 @@ if (typeof YAHOO.lacuna.buildings.MiningMinistry == "undefined" || !YAHOO.lacuna
                     Lacuna.Pulser.Hide();
                     this.rpcSuccess(o);
                     this.MiningMinistryShipsView();
-                    delete this.platforms; //reset platforms so we geto the new correct info
+                    delete this.platforms; //reset platforms so we go get the new correct info
                 },
                 scope:this.Self
             });
+        },
+        AbandonAllPlatforms : function(e) {
+            if(confirm("Are you sure you want to abandon all platforms controlled by this Mining Ministry?")) {
+                Lacuna.Pulser.Show();
+                this.service.mass_abandon_platform({
+                        session_id:Game.GetSession(),
+                        building_id:this.building.id
+                    }, {
+                    success : function(o){
+                        YAHOO.log(o, "info", "Observatory.AbandonAllPlatforms.mass_abandon_platform.success");
+                        Lacuna.Pulser.Hide();
+                        this.rpcSuccess(o);
+                        this.probes = null;
+
+                        //close buildingDetails
+                        this.fireEvent("onHide");
+                    },
+                    scope:this
+                });
+            }
         }
 
     });

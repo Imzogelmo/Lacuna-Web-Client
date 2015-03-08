@@ -1331,17 +1331,18 @@ body.yui-skin-sam  .yui-pg-page {
 /*
 planet details
 */
-#planetDetailsName {
+#planetDetailsName , #starDetailsName {
 	font-family:impact;
 	font-size:120%;	
 }
-#planetDetailsInfo label , #planetDetailOre label {
+#planetDetailsInfo label , #planetDetailOre label, #starDetailsInfo label {
 	font-weight:bold;
 	display:inline-block; /*mozilla 3.0, ie 8*/
     zoom:1; /*force ie layout so we can use the display:inline below*/
     *display:inline; /*ie hack to make it think this is an inline-block*/
 	width:100px;
 }
+
 #planetDetailRename label {
 	width:150px;
 }
@@ -2103,6 +2104,9 @@ div.archaeologyGlyphContainer div.archaeologyGlyphHeader {
 	padding: 5px;
 	border-top: 1px solid #52acff;
 }
+#battleLogsDetails .attacked {
+	padding: 5px;
+}
 #battleLogsDetails .defender {
 	padding: 5px;
 }
@@ -2203,7 +2207,7 @@ PROFILE
 	padding:2px;
 	margin: 2px 0;
 }
-#profileSpecies label , #geneticsLabDetails label {
+#profileSpecies label , #geneticsLabDetails label , #profileAccountInfo label {
 	display:inline-block; /*mozilla 3.0, ie 8*/
     zoom:1; /*force ie layout so we can use the display:inline below*/
     *display:inline; /*ie hack to make it think this is an inline-block*/
@@ -2211,7 +2215,7 @@ PROFILE
 	vertical-align:top;
 	font-weight:bold;
 }
-#profileSpecies span, #geneticsLabDetails span {
+#profileSpecies span, #geneticsLabDetails span , #profileAccountInfo span {
 	display:inline-block;
 	width:250px;
 }

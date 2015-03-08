@@ -1,6 +1,6 @@
 YAHOO.namespace("lacuna");
 if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
-      
+        
 (function(){
     var smd = {
         Alliance : {
@@ -71,19 +71,11 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                         {"name":"body_id", "type":"string", "optional":false}
                     ],
                     "returns":{"type":"object"}
-                    /*
-                         {
-                            "build_queue" : {
-                                "building-id-goes-here" : {
-                                    "seconds_remaining" : 60,
-                                    "start" : "01 31 2010 11:08:03 +0600",
-                                    "end" : "01 31 2010 13:09:05 +0600",
-                                },
-                                ....
-                            },
-                            "status" : "get_status",
-                         }
-                    */
+                },
+                "get_body_status" : {
+                    "description" : "Retrieves the status of a body to display in the star map.",
+                    "parameters" : [{"name":"args", "type":"object", "optional":false}],
+                    "returns" : {"type" : "object"}
                 },
                 "get_status" : {
                     "description": "Returns detailed statistics about a planet.",
@@ -182,12 +174,6 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"ore_type", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"object"}
-                        /*
-                        {
-                            "status" : { get_status() },
-                            "seconds_remaining" : 10800
-                         }
-                        */
                     },
                     "get_glyph_summary" : {
                         "description": "Returns a list of glyphs that may be traded. Used with the add_trade method.",
@@ -204,18 +190,6 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"building_id", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"object"}
-                        /*
-                         {
-                            "status" : { ... },
-                            "glyphs" : [
-                                {
-                                    "id" : "id-goes-here",
-                                    "type" : "bauxite",
-                                },
-                                ...
-                            ]
-                         }
-                        */
                     },
                     "assemble_glyphs" : {
                         "description": "Turns glyphs into rare ancient items.",
@@ -295,6 +269,14 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"excavator_id", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"object"} //status
+                    },
+                    "mass_abandon_excavator" : {
+                        "description": "Close down all existing excavator sites.",
+                        "parameters": [
+                            {"name":"session_id", "type":"string", "optional":false},
+                            {"name":"building_id", "type":"string", "optional":false}
+                        ],
+                        "returns":{"type":"object"} //status
                     }
                     
                 }
@@ -363,12 +345,12 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                     "subsidize_one_build" : {
                         "description": "Instantly finish any one building on the build queue.",
                         "parameters": [{"name":"args", "type":"object", "optional":false}],
-						"returns":{"type":"object"}
+                        "returns":{"type":"object"}
                     },
                     "cancel_build" : {
                         "description": "Cancel any one building on the build queue.",
                         "parameters": [{"name":"args", "type":"object", "optional":false}],
-						"returns":{"type":"object"}
+                        "returns":{"type":"object"}
                     },
                     "subsidize_build_queue" : {
                         "description": "Allows a player to instantly finish all buildings in their build queue. The cost is returned by the view method.",
@@ -816,6 +798,25 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"building_id", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"string"}
+                    }
+                }
+            },
+            EssentiaVein : {
+                "SMDVersion":"2.0",
+                "description": "Essentia Vein",
+                "envelope":"JSON-RPC-2.0",
+                "transport":"POST",
+                "target":"/essentiavein",
+
+                "services": {
+                    "drain" : {
+                        "description": "Drain the evein for an immediate, but smaller, amount of Essentia.",
+                        "parameters": [
+                            {"name":"session_id", "type":"string", "optional":false},
+                            {"name":"building_id", "type":"string", "optional":false},
+                            {"name":"times", "type":"number", "optional":true},
+                        ],
+                        "returns":{"type":"object"},
                     }
                 }
             },
@@ -1269,6 +1270,14 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"session_id", "type":"string", "optional":false},
                             {"name":"building_id", "type":"string", "optional":false},
                             {"name":"platform_id", "type":"string", "optional":false}
+                        ],
+                        "returns":{"type":"object"} //status
+                    },
+                    "mass_abandon_platform" : {
+                        "description": "Close down all existing mining platforms.",
+                        "parameters": [
+                            {"name":"session_id", "type":"string", "optional":false},
+                            {"name":"building_id", "type":"string", "optional":false}
                         ],
                         "returns":{"type":"object"} //status
                     }
@@ -1883,6 +1892,15 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                         */
                     },
 
+                    "get_fleet_for" : {
+                        "description": "Provides a list of incoming ships and ships that are available to send to a specific target. Use with send_ship_types.",
+                        "parameters": [
+                            {"name":"session_id", "type":"string", "optional":false},
+                            {"name":"from_body_id", "type":"string", "optional":false},
+                            {"name":"target", "type":"object", "optional":false}
+                        ],
+                        "returns":{"type":"object"}
+                    },
                     "get_ships_for" : {
                         "description": "Provides a list of incoming ships and ships that are available to send to a specific target. Use with send_ship.",
                         "parameters": [
@@ -1997,6 +2015,17 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"ship_ids", "type":"array", "optional":false},
                             {"name":"target", "type":"string", "optional":false},
                             {"name":"set_speed", "type":"number", "optional":true}
+                        ],
+                        "returns":{"type":"object"}
+                    },
+                    "send_ship_types" : {
+                        "description": "Sends a group of ships to a specified body or star. Use with get_fleet_for.",
+                        "parameters": [
+                            {"name":"session_id", "type":"string", "optional":false},
+                            {"name":"body_id", "type":"string", "optional":false},
+                            {"name":"target", "type":"string", "optional":false},
+                            {"name":"type_params", "type":"object", "optional":false},
+                            {"name":"arrival", "type":"object", "optional":false}
                         ],
                         "returns":{"type":"object"}
                     },
@@ -2326,7 +2355,8 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                             {"name":"building_id", "type":"string", "optional":false},
                             {"name":"plan_class", "type":"string", "optional":false},
                             {"name":"level", "type":"number", "optional":false},
-                            {"name":"extra_build_level", "type":"number", "optional":false}
+                            {"name":"extra_build_level", "type":"number", "optional":false},
+                            {"name":"quantity", "type":"number", "optional":false}
                         ],
                         "returns":{"type":"object"}
                     },
@@ -2963,7 +2993,7 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
             "target":"/chat/rpc",
 
             "services": {
-                "get_commands" : {
+                "init_chat" : {
                     "description": "Get chat login data.",
                     "parameters": [
                         {"name":"session_id", "type":"string", "optional":false}
@@ -3230,6 +3260,13 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                 },
                 "boost_building" : {
                     "description": "Spends 5 essentia, and boosts building queues on all planets for 7 days. If a boost is already underway, calling again will add 7 more days.",
+                    "parameters": [
+                        {"name":"session_id", "type":"string", "optional":false}
+                    ],
+                    "returns":{"type":"object"}
+                },
+                "boost_spy_training" : {
+                    "description": "Spends 5 essentia, and boosts spy training on all planets for 7 days. If a boost is already underway, calling again will add 7 more days.",
                     "parameters": [
                         {"name":"session_id", "type":"string", "optional":false}
                     ],
@@ -3544,6 +3581,11 @@ if (typeof YAHOO.lacuna.SMD == "undefined" || !YAHOO.lacuna.SMD) {
                         "status" : { ... }
                      }
                     */
+                },
+                "get_star_map" : {
+                    "description" : "Retrieves a chunk of the star map (lite version).",
+                    "parameters" : [{"name":"args", "type":"object", "optional":false}],
+                    "returns" : {"type" : "object"}
                 },
                 "get_stars" : {
                     "description": "Retrieves a chunk of the map and returns it as an array of hashes.",

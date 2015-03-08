@@ -66,7 +66,7 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
             };
             Game.escListener = new Util.KeyListener(document, { keys:27 }, { fn:Game.OverlayManager.hideAll, scope:Game.OverlayManager, correctScope:true } );
             
-            //get resources right away since they don't depend on anything
+            //get resources right away since they don't depend on anything.
             Game.GetResources();
             Game.PreloadUI();
             
@@ -81,7 +81,36 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
                     expires: new Date(now.setFullYear(now.getFullYear() + 1))
                 });
             }
-            
+            try {
+            Game.chatRef = new Firebase('https://lacunapt.firebaseio.com');
+            Game.chat = new ChiselchatUI(Game.chatRef, document.getElementById("chiselchat-wrapper"));
+            Game.chat.addCommand({
+                match : /^\/wiki/,
+                func : function(e) {
+                    var msg=e.content.replace(/^\/wiki/, "");
+                    msg = msg.trim();
+                    if (msg.length) {
+                        e.content = "http://community.lacunaexpanse.com/wiki?func=search&query="+msg;
+                    }
+                    else {
+                        e.content = "http://community.lacunaexpanse.com/wiki";
+                    }
+                },
+                name : "/wiki",
+                help : "Quick link to the Lacuna Expanse wiki.",
+                moderatorOnly : false
+            });
+            Game.chat.addCommand({
+                match : /^\/planet$/,
+                func : function(message, chatui) {
+                    var body = Game.GetCurrentPlanet();
+                    message.content = "My current planet is '"+body.name+"' at '"+body.x+"|"+body.y+"' in zone '"+body.zone+"'";
+                },
+                name : "/planet",
+                help : "Show everyone where your current planet is.",
+                moderatorOnly : false
+            });
+            } catch(err){} // no chat (e.g., private server)
             if (query.reset_password) {
                 Game.InitLogin();
                 Game.LoginDialog.resetPassword(query.reset_password);
@@ -122,7 +151,7 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
                 Game.Reset();
                 Game.DoLogin(o.error);
             }
-            // Game over
+            // Game over.
             else if(o.error.code == 1200) {
                 alert(o.error.message);
                 Game.Reset();
@@ -163,6 +192,8 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
                     //store empire data
                     Lacuna.Game.ProcessStatus(result.status);
                     //Run rest of UI now that we're logged in
+
+                    Game.InitChat();
                     Lacuna.Game.Run();
                     if (result.welcome_message_id) {
                         Game.QuickDialog({
@@ -217,7 +248,7 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
             }, 10 * 60 * 1000);
 
             //chat system
-            Game.InitChat();
+//            Game.InitChat();
             //init event subscribtions if we need to
             Game.InitEvents();
             //enable esc handler
@@ -248,15 +279,46 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
             Lacuna.Pulser.Hide();
         },
         InitChat : function() {
-            Game.Services.Chat.get_commands({session_id:Game.GetSession()},{
-                success : function(o){
-                    Game.chatLogout = o.result.logout_command;
-                    if(window.env_executeCommand) {
-                        YAHOO.log(o, "debug", "Chat.get_commands.success");
-                        window.env_executeCommand(o.result.login_command);
-                    }
+            Game.Services.Chat.init_chat({session_id: Game.GetSession()},{
+                success : function(o) {
+                    if (!Game.chat) { return true; }
+                    var result = o.result;
+                    Game.chat_auth = result.chat_auth;
+                    Game.gravatar_url = result.gravatar_url;
+                    Game.private_room = result.private_room;
+
+
+                    Game.chatRef.authWithCustomToken(result.chat_auth, function(error) {
+                        if (error) {
+                            console.log("Chisel Chat login failed!", error);
+                        }
+                        else {
+                            console.log("Chisel Chat login successful!");
+                            
+                            try {
+                                Game.chat.setUser({
+                                    userId  :     result.status.empire.id,
+      				    userName :    result.chat_name,
+      				    isGuest :     false, // for now
+      				    isModerator : result.isModerator,
+      				    isStaff :     result.isStaff,
+      				    avatarUri :   Game.gravatar_url,
+                                    profileUri :  Game.gravatar_url
+                                });
+                            }
+                            catch(err) {
+                                 console.log("cannot setUser "+err);
+                            }
+                            if (Game.private_room) {
+                                Game.chat._chat.enterRoom(Game.private_room.id, Game.private_room.name);
+                            }
+                        }
+                    });
                 },
-                failure : function(o){ return true; }
+                failure : function(o) {
+                    console.log("Chisel Chat init_chat failure.");
+                    return true;
+                }
             });
         },
         InitEvents : function() {
@@ -789,6 +851,15 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
         },
         Reset : function() {
             //clearInterval(Game.recInt);
+
+            if (Game.chat) {
+                try {
+                    Game.chat.unsetUser();
+                }
+                catch(err) {
+                    console.log("Cannot unsetuser "+err);
+                } 
+            }
             delete Game.isRunning;
             clearInterval(Game.planetRefreshInterval);
             delete Game.planetRefreshInterval;
@@ -796,9 +867,6 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
             Game.escListener.disable();
             
             document.title = 'Lacuna Expanse';
-            
-            var logoutCommand = Game.chatLogout;
-    
             Game.RemoveCookie("locationId");
             Game.RemoveCookie("locationView");
             
@@ -808,12 +876,6 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
             Lacuna.MapStar.Reset();
             Lacuna.MapPlanet.Reset();
             Lacuna.Notify.Hide();
-            
-            //do this last since we don't control the code
-            if(logoutCommand && window.env_executeCommand) {
-                YAHOO.log("Chat logout of session", "debug", "Reset");
-                window.env_executeCommand(logoutCommand);
-            }
         },
 
         //Cookie helpers functions
@@ -997,7 +1059,6 @@ if (typeof YAHOO.lacuna.Game == "undefined" || !YAHOO.lacuna.Game) {
                         Game.QueueFire(toFire[fId], fId);
                     }
                 }
-            
             }
         },
         QueueTick : function(type, id, ms) {

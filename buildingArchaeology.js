@@ -194,7 +194,7 @@ if (typeof YAHOO.lacuna.buildings.Archaeology == "undefined" || !YAHOO.lacuna.bu
   
   Lang.extend(Archaeology, Lacuna.buildings.Building, {
     getChildTabs : function() {
-      return [this._getSearchTab(), this._getViewTab(), this._getExcavatorTab() ];
+      return [this._getSearchTab(), this._getViewTab(), this._getExcavatorTab(), this._getAbandonExcavatorTab() ];
     },
     _getSearchTab : function() {
       var tab = new YAHOO.widget.Tab({ label: "Search", content: [
@@ -274,6 +274,19 @@ if (typeof YAHOO.lacuna.buildings.Archaeology == "undefined" || !YAHOO.lacuna.bu
       ].join('')});
       this.excavatorTab.subscribe("activeChange", this.viewExcavators, this, true);
           
+      return this.excavatorTab;
+    },
+    _getAbandonExcavatorTab : function() {
+      this.excavatorTab = new YAHOO.widget.Tab({ label: "Abandon All Excavators", content: [
+    	'<div>',
+        '    <button type="button" id="archaeologyMinistryBigRedButton">Abandon All Excavators!</button>',
+        '</div>'
+      ].join('')});
+      var btn = Sel.query("button", this.excavatorTab.get("contentEl"), true);
+      if (btn) {
+          Event.on(btn, "click", this.AbandonAllExcavators, this, true);
+      }
+
       return this.excavatorTab;
     },
     viewExcavators : function(e) {
@@ -644,7 +657,27 @@ if (typeof YAHOO.lacuna.buildings.Archaeology == "undefined" || !YAHOO.lacuna.bu
         },
         scope:this
       });
-    }
+    },
+    AbandonAllExcavators : function(e) {
+        if(confirm("Are you sure you want to abandon all excavators controlled by this Archaeology Ministry?")) {
+            Lacuna.Pulser.Show();
+            this.service.mass_abandon_excavator({
+                    session_id:Game.GetSession(),
+                    building_id:this.building.id
+                 }, {
+                success : function(o){
+                     YAHOO.log(o, "info", "Archaeology.AbandonAllExcavators.mass_abandon_excavator.success");
+                     Lacuna.Pulser.Hide();
+                     this.rpcSuccess(o);
+                     this.probes = null;
+                        
+        	          //close buildingDetails
+                     this.fireEvent("onHide");
+                 },
+                 scope:this
+               });
+            }
+        }
   });
   
   Lacuna.buildings.Archaeology = Archaeology;

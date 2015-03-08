@@ -25,7 +25,8 @@ if (typeof YAHOO.lacuna.buildings.TheDillonForge == "undefined" || !YAHOO.lacuna
             this.splitTab = new YAHOO.widget.Tab({ label: "Forge", content: [
                 '<div id="forgeSplitPlan">',
                 '  <div><b>Split a plan into glyphs.</b></div>',
-                '  <div id="forgeSplitPlanForm"></div><hr/>',
+                '  <div id="forgeSplitPlanForm"></div>',
+                '<hr/>',
                 '</div>',
                 '<div id="forgeMakePlan">',
                 '  <div><b>Combine level 1 plans into a higher level plan.</b></div>',
@@ -75,6 +76,41 @@ if (typeof YAHOO.lacuna.buildings.TheDillonForge == "undefined" || !YAHOO.lacuna
             emptyFirst.setAttribute("value","");
             emptyFirst.innerHTML = "Select plan (maximum level) &#91;time to make&#93;";
             select.appendChild(emptyFirst);
+            make_plan.sort(function(a,b) {
+              if(a["class"] > b["class"]) {
+                return 1;
+              }
+              else if(a["class"] < b["class"]) {
+                return -1;
+              }
+              else {
+                if(a.name > b.name) {
+                  return 1;
+                }
+                else if(a.name < b.name) {
+                  return -1;
+                }
+                else {
+                  if (a.level > b.level) {
+                    return 1;
+                  }
+                  else if (a.level < b.level) {
+                    return -1;
+                  }
+                  else {
+                    if (a.extra_build_level > b.extra_build_level) {
+                      return 1;
+                    }
+                    else if (a.extra_build_level < b.extra_build_level) {
+                      return -1;
+                    }
+                    else {
+                      return 0;
+                    }
+                  }
+                }
+              }
+            });
             
             for (var i = 0; i < make_plan.length; i++) {
                 var nOpt = option.cloneNode(false);
@@ -156,6 +192,34 @@ if (typeof YAHOO.lacuna.buildings.TheDillonForge == "undefined" || !YAHOO.lacuna
             emptyFirst.setAttribute("value","");
             emptyFirst.innerHTML = "Select plan (levels) &#91;time to split&#93;";
             select.appendChild(emptyFirst);
+
+            split_plan.sort(function(a,b) {
+              if(a.name > b.name) {
+                return 1;
+              }
+              else if(a.name < b.name) {
+                return -1;
+              }
+              else {
+                if (a.level > b.level) {
+                  return 1;
+                }
+                else if (a.level < b.level) {
+                  return -1;
+                }
+                else {
+                  if (a.extra_build_level > b.extra_build_level) {
+                    return 1;
+                  }
+                  else if (a.extra_build_level < b.extra_build_level) {
+                    return -1;
+                  }
+                  else {
+                    return 0;
+                  }
+                }
+              }
+            });
             
             for (var i=0; i<split_plan.length; i++) {
                 var nOpt = option.cloneNode(false);
@@ -168,28 +232,40 @@ if (typeof YAHOO.lacuna.buildings.TheDillonForge == "undefined" || !YAHOO.lacuna
                 nOpt.innerHTML = [
                     split_plan[i].name, ' (',
                     split_plan[i].level, '+',
-                    split_plan[i].extra_build_level, ') &#91;',
+                    split_plan[i].extra_build_level, ') : ',
+                    split_plan[i].quantity, ' &#91;',
                     Lib.formatTime( split_plan[i].reset_seconds ), '&#93;'
                 ].join('');
                 select.appendChild(nOpt);
             }
             
+            var input = document.createElement("input");
+            input.setAttribute("id", "forgeSplitPlanQuantity");
+            input.setAttribute("size", 6);
+            option.appendChild(input);
+
             var button = document.createElement("button");
             button.innerHTML = "Split Plan";
             Dom.setStyle(button, "margin-left", "1em");
             option.appendChild(button);
             
             split_form.appendChild(select);
+            split_form.appendChild( document.createTextNode(" Quantity: ") );
+            split_form.appendChild(input);
             split_form.appendChild(button);
             
             Event.on(button, "click", this.SplitPlan, {Self:this}, true);
         },
         SplitPlan : function() {
-            var selected = Lib.getSelectedOptionValue("forgeSplitPlanSelect");
+            var selected = Lib.getSelectedOptionValue("forgeSplitPlanSelect"),
+                quantity = Dom.get("forgeSplitPlanQuantity").value;
             
             if ( selected == "" ) {
                 alert("Select a plan");
                 return;
+            }
+            if ( quantity < 2 ) {
+                quantity = 1;
             }
             
             selected = selected.split(";");
@@ -202,7 +278,8 @@ if (typeof YAHOO.lacuna.buildings.TheDillonForge == "undefined" || !YAHOO.lacuna
                         building_id:this.Self.building.id,
                         plan_class: selected[0],
                         level: selected[1],
-                        extra_build_level: selected[2]
+                        extra_build_level: selected[2],
+                        quantity: quantity,
                     },
                     {
                         success : function(o){
@@ -218,9 +295,11 @@ if (typeof YAHOO.lacuna.buildings.TheDillonForge == "undefined" || !YAHOO.lacuna
         },
         viewForgeSubsidize : function() {
             var form = Dom.get("forgeSubsidizeForm"),
-                cost = this.result.tasks.subsidy_cost;
+                cost = this.result.tasks.subsidy_cost,
+                work = this.result.tasks.working,
+                seconds = this.result.tasks.seconds_remaining;
             
-            form.innerHTML = "";
+            form.innerHTML = ['<div>',work," for ",Lib.formatTime(seconds),'</div>'].join('');
             
             var button = document.createElement("button");
             button.innerHTML = "Subsidize for " + cost + "E";
